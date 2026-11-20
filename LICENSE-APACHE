@@ -1,0 +1,23 @@
+Apache License, Version 2.0 — summary pointer
+
+SPDX-License-Identifier: Apache-2.0
+
+This file is a short, honest summary pointer, NOT the verbatim Apache-2.0
+license text. I could not reproduce the full canonical text byte-for-byte here,
+so the canonical text at the URLs below governs:
+
+  https://spdx.org/licenses/Apache-2.0.html
+  https://www.apache.org/licenses/LICENSE-2.0
+
+Summary of the terms (non-authoritative): Apache-2.0 is a permissive license.
+It grants copyright and patent licenses to use, reproduce, modify, distribute
+and sublicense the work, subject to conditions: you must give recipients a copy
+of the license, retain copyright/patent/trademark/attribution notices, and
+state clearly what changes you made. You may not use the names of the licensor
+or its contributors to endorse your derivatives without permission. The work
+is provided "AS IS", without warranties, and the license includes a limited
+patent-retaliation termination clause and disclaimers of liability.
+
+The starter is dual-licensed under `MIT AND Apache-2.0`. That means you may use
+it under either license, or under both, at your option; the two licenses are not
+required to be applied simultaneously. See `LICENSE-MIT` for the MIT text.
