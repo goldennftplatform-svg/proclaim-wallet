@@ -4,19 +4,33 @@
   "description": "LP-0021 reference Wallet Provider SDK and approval-gate CLI (mock adapters, local only)",
   "license": "MIT AND Apache-2.0",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "main": "src/provider.js",
   "exports": {
-    ".": "./src/provider.js",
+    ".": {
+      "types": "./src/provider.d.ts",
+      "default": "./src/provider.js"
+    },
     "./provider.ts": "./src/provider.ts"
   },
-  "bin": { "proclaim-wallet": "./bin/proclaim-wallet.js" },
-  "files": ["src", "bin", "README.md", "LICENSE-MIT", "LICENSE-APACHE"],
+  "bin": {
+    "proclaim-wallet": "./bin/proclaim-wallet.js"
+  },
+  "files": [
+    "src",
+    "bin",
+    "README.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+  ],
   "scripts": {
     "test": "node --test test/*.test.js",
     "cli:demo": "node bin/proclaim-wallet.js demo",
     "cli:attack": "node bin/proclaim-wallet.js attack"
   },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {},
+  "types": "src/provider.d.ts"
 }
