@@ -6,11 +6,17 @@ import {
   sampleTransactionRequest, sampleProgramMeta, sampleVerificationStatus,
   sampleSimulationResult, effectsToHumanLines,
 } from '../src/provider.js';
+import { denyTransport, socks5Transport } from '../src/transport.js';
+import { HttpProgramRegistry } from '../src/net-adapters.js';
 
 const command = process.argv[2] || 'help';
 const asJson = process.argv.includes('--json');
 const out = (obj) => console.log(JSON.stringify(obj, null, 2));
 const die = (msg) => { console.error(`ERROR: ${msg}`); process.exit(1); };
+function argValue(flag) {
+  const i = process.argv.indexOf(flag);
+  return i >= 0 ? process.argv[i + 1] : null;
+}
 
 // Same fixture the SDK tests use: a registered program, an IDL result, and a
 // CoreAuthorizer that grants exactly one session/account. A grant is the user's
@@ -76,16 +82,37 @@ function attack() {
   if (!allHeld) process.exit(1);
 }
 
+// Network lookup is opt-in. Without --socks5 the default deny transport
+// refuses the request, so the CLI never opens a direct socket.
+async function lookup() {
+  const proxy = argValue('--socks5');
+  const host = argValue('--host') || 'registry.example';
+  const port = Number(argValue('--port') || '443');
+  const programId = argValue('--program') || 'testimonial-store';
+  const tls = process.argv.includes('--tls');
+  const transport = proxy ? socks5Transport(proxy) : denyTransport;
+  try {
+    const registry = new HttpProgramRegistry({ transport, host, port, tls });
+    const entry = await registry.refresh(programId);
+    out({ command: 'lookup', proxy: proxy || null, host, port, tls, programId, entry });
+  } catch (e) {
+    die(`${e.code || e.name}: ${e.message}`);
+  }
+}
+
 switch (command) {
   case 'capabilities': out(fresh().w.getCapabilities()); break;
   case 'accounts': out(fresh().w.listAccounts()); break;
   case 'demo': demo(); break;
   case 'attack': attack(); break;
+  case 'lookup': lookup(); break;
   case 'help':
     console.log('proclaim-wallet — LP-0021 reference CLI (mock adapters, local only)');
-    console.log('commands: capabilities | accounts | demo | attack [--json]');
+    console.log('commands: capabilities | accounts | demo | attack | lookup [--json]');
     console.log('demo  = propose, blocked premature sign, human-readable effects, authorize, submit');
     console.log('attack= 8 negative cases; exits 1 if any approval gate fails');
+    console.log('lookup= proxy-only registry fetch; requires --socks5 socks5://host:port');
+    console.log('        optional: --host <domain> --port <n> --program <id> --tls');
     break;
   default: die(`unknown command: ${command}`);
 }
