@@ -4,7 +4,9 @@
 
 A dependency-free reference implementation of the LEZ Wallet Provider surface:
 a TypeScript SDK and a CLI that demonstrate the **approval gate** — no signing
-without an explicit `authorize()` call.
+without an explicit `authorize()` call — plus a **privacy-first transport seam**:
+the wallet never opens a direct socket and the default transport refuses all
+network access.
 
 **One independent builder. Local, mock-backed reference code.** No chain calls,
 no keystore integration, no Basecamp module, no on-chain deployment, no users,
@@ -27,13 +29,14 @@ and test the rules before writing real adapters:
 ## Install and try
 
 ```sh
-git clone --branch v1.0.0 --depth 1 \
+git clone --branch v1.1.0 --depth 1 \
   https://github.com/goldennftplatform-svg/proclaim-wallet.git
 cd proclaim-wallet
-npm test                       # 23/23 (SDK + CLI), Node >= 22, zero dependencies
+npm test                       # 35/35, Node >= 22, zero dependencies
 node bin/proclaim-wallet.js capabilities
 node bin/proclaim-wallet.js demo
 node bin/proclaim-wallet.js attack --json   # exits 1 if any gate fails
+node bin/proclaim-wallet.js lookup           # exits 1: network disabled by default
 ```
 
 `attack` runs eight negative cases: premature sign, wrong capability, wrong
@@ -59,9 +62,34 @@ Swap any adapter (`FundingProvider`, `ProgramRegistry`, `IdlProvider`,
 `CoreAuthorizer`, `Signer`) with real implementations. The gate logic is
 adapter-independent and covered by negative tests.
 
+## Privacy-first transport
+
+By default the provider uses `denyTransport`: any network request throws
+`DIRECT_NETWORK_DISABLED` before a socket is created. To allow egress, inject a
+SOCKS5 transport explicitly:
+
+```js
+import { ProclaimWalletProvider, socks5Transport, HttpProgramRegistry } from
+  '@goldennftplatform-svg/wallet-provider';
+
+const transport = socks5Transport('socks5://127.0.0.1:9050');
+const registry = new HttpProgramRegistry({ transport, host: 'registry.example' });
+await registry.refresh('my-program');   // the only network call, via the proxy
+const wallet = new ProclaimWalletProvider({ Transport: transport, ProgramRegistry: registry });
+```
+
+The SOCKS5 CONNECT carries the destination **domain name** (no local DNS), TLS
+is pinned, and IP-literal destinations are rejected. The single socket is opened
+to the proxy, never to the destination. Full threat model, gates and commands:
+[`PRIVACY-TRANSPORT.md`](PRIVACY-TRANSPORT.md).
+
 ## Honest scope
 
-This is **reference code with mock adapters**. It is not a deployed wallet, not
-an on-chain program, not a Basecamp module, not real cryptography or key
-storage, and not evidence of adoption or prize-criterion completion. It ships
-so integrators can review and test the approval-boundary design. See `RESULT.md`.
+This is **reference code with mock adapters** plus an opt-in proxy transport. It
+is not a deployed wallet, not an on-chain program, not a Basecamp module, not
+real cryptography or key storage, and not evidence of adoption or
+prize-criterion completion. The proxy path hides the client IP from the
+destination server, but the proxy/Tor exit still sees traffic; it is not
+mixnet-grade anonymity. It ships so integrators can review and test the
+approval-boundary and egress-boundary designs. See `RESULT.md` and
+`PRIVACY-TRANSPORT.md`.
