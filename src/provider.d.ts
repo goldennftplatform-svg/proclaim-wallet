@@ -27,10 +27,21 @@ export interface AuthorizeContext {
 }
 export interface FundingOption { id: string; [k: string]: unknown }
 export interface VerificationStatus { [k: string]: unknown }
+export interface TransportRequest {
+  host: string; port: number; tls?: boolean; method?: 'GET' | 'POST';
+  path?: string; headers?: Record<string, string>; body?: string;
+}
+export interface TransportResponse { status: number; headers: Record<string, string>; body: string }
+export interface Transport { kind: string; request(req: TransportRequest): Promise<TransportResponse> }
+export class TransportError extends Error { code: string; constructor(code: string, message: string, extra?: Record<string, unknown>) }
+export const denyTransport: Transport;
+export function socks5Transport(arg: string | { proxyHost?: string; proxyPort?: number; host?: string; port?: number; ca?: unknown; timeoutMs?: number }): Transport;
+export const TRANSPORT_KINDS: readonly string[];
+
 export interface ProviderAdapters {
   FundingProvider?: MockFundingProvider; ProgramRegistry?: MockProgramRegistry;
   IdlProvider?: MockIdlProvider; CoreAuthorizer?: MockCoreAuthorizer;
-  Signer?: MockSigner; accounts?: AccountRef[];
+  Signer?: MockSigner; Transport?: Transport; accounts?: AccountRef[];
 }
 
 export class ProviderError extends Error { code: string; constructor(code: string, message: string) }
@@ -77,6 +88,7 @@ export class ProclaimWalletProvider {
   readonly IdlProvider: MockIdlProvider;
   readonly CoreAuthorizer: MockCoreAuthorizer;
   readonly Signer: MockSigner;
+  readonly Transport: Transport;
   readonly accounts: AccountRef[];
   selectedAccountId: string | null;
   readonly proposals: Map<string, ProposalSnapshot>;
