@@ -9,6 +9,7 @@
 // proposal is born `awaiting_approval`, only `authorize()` may move it to
 // `approved`, and `signAndSubmit()` refuses every other state before touching
 // an injected Signer.
+import { denyTransport } from './transport.js';
 
 /**
  * @typedef {'Public' | 'Shielded'} AccountKind
@@ -597,6 +598,7 @@ export class ProclaimWalletProvider {
     IdlProvider = new MockIdlProvider(),
     CoreAuthorizer = new MockCoreAuthorizer(),
     Signer = new MockSigner(),
+    Transport = denyTransport,
     accounts = defaultAccounts(),
   } = {}) {
     this.FundingProvider = FundingProvider;
@@ -604,6 +606,7 @@ export class ProclaimWalletProvider {
     this.IdlProvider = IdlProvider;
     this.CoreAuthorizer = CoreAuthorizer;
     this.Signer = Signer;
+    this.Transport = Transport;
     this.accounts = cloneJson(accounts);
     this.selectedAccountId = null;
     this.proposals = new Map();
@@ -638,6 +641,11 @@ export class ProclaimWalletProvider {
         rawCalldataFallback: true,
       },
       funding: { available: true, adapter: 'FundingProvider' },
+      transport: {
+        kind: this.Transport.kind || 'custom',
+        networkDisabled: this.Transport.kind === 'deny',
+        privacyInvariant: 'no direct sockets; egress only via injected Transport',
+      },
     };
   }
 
@@ -861,4 +869,5 @@ export class ProclaimWalletProvider {
   }
 }
 
+export { denyTransport, socks5Transport, TransportError, TRANSPORT_KINDS } from './transport.js';
 export default ProclaimWalletProvider;
