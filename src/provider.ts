@@ -3,6 +3,8 @@
 //
 // Typed TypeScript mirror of provider.js. The tests run provider.js directly
 // (zero build step). Keep the two files in sync when changing the API.
+import { denyTransport } from './transport.js';
+import type { Transport } from './transport.js';
 
 export type AccountKind = 'Public' | 'Shielded';
 export type Capability =
@@ -699,6 +701,7 @@ export interface ProviderAdapters {
   IdlProvider?: MockIdlProvider;
   CoreAuthorizer?: MockCoreAuthorizer;
   Signer?: MockSigner;
+  Transport?: Transport;
   accounts?: AccountRef[];
 }
 
@@ -708,6 +711,7 @@ export class ProclaimWalletProvider {
   readonly IdlProvider: MockIdlProvider;
   readonly CoreAuthorizer: MockCoreAuthorizer;
   readonly Signer: MockSigner;
+  readonly Transport: Transport;
   readonly accounts: AccountRef[];
   selectedAccountId: string | null = null;
   readonly proposals = new Map<string, ProposalRecord>();
@@ -719,6 +723,7 @@ export class ProclaimWalletProvider {
     IdlProvider = new MockIdlProvider(),
     CoreAuthorizer = new MockCoreAuthorizer(),
     Signer = new MockSigner(),
+    Transport = denyTransport,
     accounts = defaultAccounts(),
   }: ProviderAdapters = {}) {
     this.FundingProvider = FundingProvider;
@@ -726,6 +731,7 @@ export class ProclaimWalletProvider {
     this.IdlProvider = IdlProvider;
     this.CoreAuthorizer = CoreAuthorizer;
     this.Signer = Signer;
+    this.Transport = Transport;
     this.accounts = cloneJson(accounts);
   }
 
@@ -753,6 +759,11 @@ export class ProclaimWalletProvider {
         rawCalldataFallback: true,
       },
       funding: { available: true, adapter: 'FundingProvider' },
+      transport: {
+        kind: this.Transport.kind || 'custom',
+        networkDisabled: this.Transport.kind === 'deny',
+        privacyInvariant: 'no direct sockets; egress only via injected Transport',
+      },
     };
   }
 
